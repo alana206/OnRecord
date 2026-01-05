@@ -1,0 +1,8 @@
+{
+  "name": "Boundary Ledger",
+  "description": "A high-integrity accountability tracker for commitments, boundaries, and agreements. Designed to eliminate ambiguity and provide a factual record of follow-through for couples, co-parents, and professionals.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
