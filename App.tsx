@@ -4,19 +4,25 @@ import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import PatternAnalysis from './components/PatternAnalysis';
 import Button from './components/Button';
+import VoiceInput from './components/VoiceInput';
 import { Commitment, Category, Status } from './types';
 import { INITIAL_COMMITMENTS } from './constants';
 
 const App: React.FC = () => {
   const [commitments, setCommitments] = useState<Commitment[]>(INITIAL_COMMITMENTS);
+  
+  // Commitment Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Form State
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newPromisor, setNewPromisor] = useState('');
   const [newPromisee, setNewPromisee] = useState('');
   const [newDod, setNewDod] = useState('');
+
+  // Log Modal State
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [activeLogId, setActiveLogId] = useState<string | null>(null);
+  const [logNote, setLogNote] = useState('');
 
   const handleAddCommitment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,23 +55,34 @@ const App: React.FC = () => {
     setCommitments(prev => prev.map(c => c.id === id ? { ...c, status } : c));
   };
 
-  const handleAddLog = (id: string) => {
-    const note = prompt("Enter log entry:");
-    if (!note) return;
+  const openLogModal = (id: string) => {
+    setActiveLogId(id);
+    setLogNote('');
+    setIsLogModalOpen(true);
+  };
+
+  const handleSubmitLog = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeLogId || !logNote.trim()) return;
+
     setCommitments(prev => prev.map(c => {
-      if (c.id === id) {
+      if (c.id === activeLogId) {
         return {
           ...c,
           updates: [{
             id: Math.random().toString(36).substr(2, 9),
             timestamp: Date.now(),
             author: 'Current User',
-            note
+            note: logNote
           }, ...c.updates]
         };
       }
       return c;
     }));
+    
+    setIsLogModalOpen(false);
+    setLogNote('');
+    setActiveLogId(null);
   };
 
   return (
@@ -75,8 +92,8 @@ const App: React.FC = () => {
         <aside className="w-full md:w-64 bg-white border-r border-slate-200 p-6 flex flex-col">
           <div className="mb-10">
             <h1 className="text-xl font-black text-slate-900 tracking-tighter flex items-center">
-              <div className="w-8 h-8 bg-slate-900 text-white flex items-center justify-center rounded-lg mr-2 text-sm">BL</div>
-              BOUNDARY<span className="text-slate-400">LEDGER</span>
+              <div className="w-8 h-8 bg-slate-900 text-white flex items-center justify-center rounded-lg mr-2 text-sm">ON</div>
+              ON<span className="text-slate-400">RECORD</span>
             </h1>
             <p className="text-xs text-slate-400 font-medium mt-1 uppercase tracking-widest">Accountability CRM</p>
           </div>
@@ -105,12 +122,12 @@ const App: React.FC = () => {
         {/* Main Content */}
         <main className="flex-1 p-6 md:p-12 max-w-6xl mx-auto w-full">
           <Routes>
-            <Route path="/" element={<Dashboard commitments={commitments} onStatusChange={handleStatusChange} onAddUpdate={handleAddLog} />} />
+            <Route path="/" element={<Dashboard commitments={commitments} onStatusChange={handleStatusChange} onAddUpdate={openLogModal} />} />
             <Route path="/analysis" element={<PatternAnalysis commitments={commitments} />} />
           </Routes>
         </main>
 
-        {/* Modal Overlay */}
+        {/* New Commitment Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 transform animate-in slide-in-from-bottom-4 duration-300">
@@ -137,7 +154,13 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Description</label>
+                  <div className="flex justify-between items-end mb-1">
+                    <label className="block text-sm font-bold text-slate-700">Description</label>
+                    <VoiceInput 
+                      onTranscription={(text) => setNewDescription(prev => prev + (prev ? ' ' : '') + text)} 
+                      label="Speak Context"
+                    />
+                  </div>
                   <textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="What's the context?" className="w-full border border-slate-200 rounded-xl p-3 h-24 focus:ring-2 focus:ring-slate-900 outline-none" />
                 </div>
                 <div>
@@ -148,6 +171,42 @@ const App: React.FC = () => {
                 <div className="pt-4 flex space-x-3">
                   <Button type="submit" className="flex-1">Register Commitment</Button>
                   <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Add Log Modal */}
+        {isLogModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 transform animate-in slide-in-from-bottom-4 duration-300">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-slate-900">Add Update Log</h3>
+                <button onClick={() => setIsLogModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+              <form onSubmit={handleSubmitLog} className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                     <label className="block text-sm font-medium text-slate-700">Note</label>
+                     <VoiceInput 
+                       onTranscription={(text) => setLogNote(prev => prev + (prev ? ' ' : '') + text)} 
+                       label="Dictate Note"
+                     />
+                  </div>
+                  <textarea 
+                    required 
+                    value={logNote} 
+                    onChange={e => setLogNote(e.target.value)} 
+                    placeholder="Enter update details..." 
+                    className="w-full border border-slate-200 rounded-xl p-3 h-32 focus:ring-2 focus:ring-slate-900 outline-none" 
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <Button type="submit" className="flex-1">Add Log</Button>
+                  <Button type="button" variant="secondary" onClick={() => setIsLogModalOpen(false)}>Cancel</Button>
                 </div>
               </form>
             </div>

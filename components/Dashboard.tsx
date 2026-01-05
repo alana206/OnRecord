@@ -65,7 +65,7 @@ const Dashboard: React.FC<DashboardProps> = ({ commitments, onStatusChange, onAd
       {/* Commitments Section */}
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">The Boundary Ledger</h2>
+          <h2 className="text-2xl font-bold text-slate-900">OnRecord</h2>
           <div className="flex space-x-2">
             <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">All Items</span>
           </div>

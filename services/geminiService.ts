@@ -9,6 +9,31 @@ export class GeminiService {
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   }
 
+  async transcribeAudio(base64Audio: string, mimeType: string = 'audio/webm'): Promise<string> {
+    try {
+      const response = await this.ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Audio
+              }
+            },
+            {
+              text: "Transcribe the following audio recording exactly as spoken. Do not add any commentary."
+            }
+          ]
+        }
+      });
+      return response.text?.trim() || "";
+    } catch (error) {
+      console.error("Gemini transcription failed:", error);
+      return "";
+    }
+  }
+
   async analyzeCommitments(commitments: Commitment[]): Promise<AnalysisResult> {
     const prompt = `
       Analyze the following list of accountability commitments and provide a brutal, useful summary of the follow-through patterns.
